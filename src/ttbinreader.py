@@ -104,9 +104,9 @@ class TtbinFileReader:
         elif tag == TtbinFileRecordTag.Elevation.value:
             return self.ReadElevationx47(activity, file)
         elif tag == TtbinFileRecordTag.RouteDescription.value:
-            return self.RouteDescriptionx44(activity, file)
+            return self.ReadRouteDescriptionx44(activity, file)
         elif tag == TtbinFileRecordTag.HeartRateRecovery.value:
-            return self.HeartRateRecoveryx3f(activity, file)
+            return self.ReadHeartRateRecoveryx3f(activity, file)
         return False
 
     def ParseDate(self, secondsSince1970: int, includeOffset: int):
@@ -275,10 +275,10 @@ class TtbinFileReader:
             activity.LogElevation(fAltitude, fAscend, fDescend)
         return True
 
-    def RouteDescriptionx44(self, activity: Activity, file: BinaryIO):
+    def ReadRouteDescriptionx44(self, activity: Activity, file: BinaryIO):
         return self.ReadSomething(file, dataLen=100)
         
-    def HeartRateRecoveryx3f(self, activity: Activity, file: BinaryIO):
+    def ReadHeartRateRecoveryx3f(self, activity: Activity, file: BinaryIO):
         recoveryDef = Struct("<ll")
         data = file.read(recoveryDef.size)
         if len(data) != recoveryDef.size:
