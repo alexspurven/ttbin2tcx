@@ -39,9 +39,11 @@ def process(fileTtbin: str):
 
     dir = os.path.dirname(fileTtbin)
     dt = activity.startTime + datetime.timedelta(days=0, seconds=reader.localTimeOffset)
-    fileTcx = "%s\%s-%s.tcx" % (dir, activity.activityType.name.lower(), dt.strftime("%Y%m%d%H%M%S"))
+    fileNameTcx = "%s-%s.tcx" % (activity.activityType.name.lower(), dt.strftime("%Y%m%d%H%M%S"))
+    fileTcx = os.path.join(dir, fileNameTcx)
     writer = TcxFileWriter()
     writer.SaveActivity(fileTcx, activity)
+
 
 
 if __name__ == "__main__":
