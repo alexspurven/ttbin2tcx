@@ -67,6 +67,8 @@ class Activity(object):
     trackPoints: dict # key = time, value = TrackPoint
     trackPointsWaitingAltitude: list # track points waiting altitude measurement
 
+    defaultYear: int = 1970 # sometimes get 1969 year from TTBin
+
     def __init__(self):
         self.activityType = ActivityType.Running
         self.startTime = datetime.datetime.today()
@@ -96,8 +98,14 @@ class Activity(object):
         if self.batteryLevelMax < level:
             self.batteryLevelMax = level
 
+    # creates if necessary and returns a trackpoint at specified time
+    # returns null for default date
     def GetTrackPointAt(self, time: datetime):
         point: TrackPoint
+
+        if time.year < self.defaultYear:
+            return None
+
         if time in self.trackPoints:
             point = self.trackPoints[time]
         else:
@@ -108,13 +116,15 @@ class Activity(object):
 
     def LogHeartRate(self, time: datetime, heartRate: int):
         point = self.GetTrackPointAt(time)
-        point.heartRate = heartRate
+        if point is not None:
+            point.heartRate = heartRate
 
     def LogSteps(self, time: datetime, totalSteps: int, distance: float):
         point = self.GetTrackPointAt(time)
-        point.steps = totalSteps - self.totalSteps
-        self.totalSteps = totalSteps
-        point.distanceMeters = distance
+        if point is not None:
+            point.steps = totalSteps - self.totalSteps
+            self.totalSteps = totalSteps
+            point.distanceMeters = distance
 
     def LogElevation(self, altitude: int, ascend: int, descend: int):
         self.totalAscendMeters = ascend
@@ -126,12 +136,13 @@ class Activity(object):
 
     def LogGps(self, time: datetime, latitude: float, longitude: float, speed: float, steps: int, distance: float):
         point = self.GetTrackPointAt(time)
-        point.steps = steps
-        point.speed = speed
-        point.latitudeDegrees = latitude
-        point.longitudeDegrees = longitude
-        point.distanceMeters = distance
-        self.totalSteps = self.totalSteps + steps
+        if point is not None:
+            point.steps = steps
+            point.speed = speed
+            point.latitudeDegrees = latitude
+            point.longitudeDegrees = longitude
+            point.distanceMeters = distance
+            self.totalSteps = self.totalSteps + steps
 
     def PostLoad(self):
         # calculate cadence

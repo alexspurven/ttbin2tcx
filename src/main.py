@@ -45,6 +45,5 @@ def process(fileTtbin: str):
     writer.SaveActivity(fileTcx, activity)
 
 
-
 if __name__ == "__main__":
     main()
