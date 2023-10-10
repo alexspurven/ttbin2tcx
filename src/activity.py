@@ -28,9 +28,11 @@ class TrackPoint:
     altitudeMeters: int
     steps: int
     cadence: int
+    lapIndex: int
 
-    def __init__(self, time: datetime):
+    def __init__(self, time: datetime, lapIndex: int):
         self.time = time
+        self.lapIndex = lapIndex
         self.heartRate = 0
         self.distanceMeters = 0
         self.speed = 0
@@ -44,6 +46,19 @@ class TrackPoint:
         tm = self.time
         sec = datetime.timedelta(days=tm.day, hours=tm.hour, minutes=tm.minute, seconds=tm.second).total_seconds()
         return sec
+
+
+class Lap:
+    seconds: int
+    distance: float
+    calories: int
+    startTime: datetime
+
+    def __init__(self, seconds: int, distance: float, calories: int):
+        self.seconds = seconds
+        self.distance = distance
+        self.calories = calories
+        self.startTime = datetime.datetime.now(datetime.timezone.utc)
 
 
 # recorded activity
@@ -63,9 +78,11 @@ class Activity(object):
     batteryLevelMax: int
     avgHeartRate: int
     maxHeartRate: int
+    currentLapIndex: int
 
     trackPoints: dict # key = time, value = TrackPoint
     trackPointsWaitingAltitude: list # track points waiting altitude measurement
+    laps: list
 
     defaultYear: int = 1970 # sometimes get 1969 year from TTBin
 
@@ -87,6 +104,8 @@ class Activity(object):
         self.trackPointsWaitingAltitude = list()
         self.avgHeartRate = 0
         self.maxHeartRate = 0
+        self.laps = list()
+        self.currentLapIndex = 0
 
     def LogBatteryLevel(self, level: int):
         if self.batteryLevelMin == 0:
@@ -109,9 +128,10 @@ class Activity(object):
         if time in self.trackPoints:
             point = self.trackPoints[time]
         else:
-            point = TrackPoint(time)
+            point = TrackPoint(time, self.currentLapIndex)
             self.trackPoints[time] = point
             self.trackPointsWaitingAltitude.append(point)
+
         return point
 
     def LogHeartRate(self, time: datetime, heartRate: int):
@@ -215,6 +235,16 @@ class Activity(object):
         if heartRatePoints > 0:
             self.avgHeartRate = heartRateSum / heartRatePoints
 
+        # creating default or trailing lap
+        if self.currentLapIndex == len(self.laps):
+            self.LogLap(self.totalActiveSeconds, self.totalDistanceMeters, self.totalCalories)
+        # finding laps start time
+        for time in self.trackPoints:
+            point: TrackPoint = self.trackPoints[time]
+            lap = self.laps[point.lapIndex]
+            if lap.startTime > point.time:
+                lap.startTime = point.time
+
         print("   Distance: %s m" % (round(self.totalDistanceMeters)))
         print("   Max heart rate: %s" % (round(self.maxHeartRate)))
         print("   Avg heart rate: %s" % (round(self.avgHeartRate)))
@@ -229,3 +259,18 @@ class Activity(object):
         paceMin: float = math.floor(pace)
         paceSec = round(60.0 * (pace - paceMin))
         return "%d:%02d" % (paceMin, paceSec)
+
+    def LogLap(self, seconds: int, distance: float, calories: int):
+        # there are accumulated values are passed here
+        # calculating values just for this lap
+        sumSeconds: int = 0;
+        sumDistance = 0;
+        sumCalories = 0;
+        for lap in self.laps:
+            sumSeconds = sumSeconds + lap.seconds
+            sumDistance = sumDistance + lap.distance
+            sumCalories = sumCalories + lap.calories
+        lap = Lap(seconds - sumSeconds, distance - sumDistance, calories - sumCalories)
+        self.laps.append(lap)
+        self.currentLapIndex = self.currentLapIndex + 1
+        return

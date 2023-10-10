@@ -12,6 +12,8 @@ Supported distance correction for Treadmill activities.
 
 Cadence is calculated for Running and Treadmill activities.
 
+Added laps support.
+
 ## How to use
 
 1. Use [TomTomWatch](https://github.com/scubajorgen/TomTomWatch) tool from [Studio Blue Planet](https://blog.studioblueplanet.net/software/tomtomwatch) to extract TTBIN files from the watches.

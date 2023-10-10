@@ -14,8 +14,8 @@ class TtbinFileRecordTag(Enum):
     Summary = 0x27
     # PoolSize = 0x2a
     # WheelSize = 0x2b
-    # TrainingSetup = 0x2d
-    # Lap = 0x2f
+    TrainingSetup = 0x2d
+    Lap = 0x2f
     WaitGps = 0x30
     # CyclingCadence = 0x31
     Treadmill = 0x32
@@ -32,7 +32,8 @@ class TtbinFileRecordTag(Enum):
     # IndoorCycling = 0x40
     Gym = 0x41
     Movement = 0x42
-    RouteDescription = 0x44
+    RouteDescription1 = 0x43
+    RouteDescription2 = 0x44
     Elevation = 0x47
     x48 = 0x48
     Battery = 0x49
@@ -53,18 +54,20 @@ class TtbinFileReader:
 
         with open(fileTtbin, "rb") as ttbinfile:
             while True:
+                pos: int = ttbinfile.tell()
                 tg = ttbinfile.read(1)
                 if len(tg) == 0:
                     #print("   EOF")
                     break
 
+                #if tg[0] in TtbinFileRecordTag._value2member_map_:
+                #    print("   Tag: 0x%s %s Pos: 0x%s" \
+                #          % (format(tg[0], '02x'), TtbinFileRecordTag(tg[0]), format(pos, '02x')))
+
                 if not self.ExtractRecord(activity, tg[0], ttbinfile):
                     print("   Tag: 0x%s Pos: 0x%s is not implemented. Exiting" \
-                          % (format(tg[0], '02x'), format(ttbinfile.tell(), '02x')))
+                          % (format(tg[0], '02x'), format(pos, '02x')))
                     break
-
-                #print("   Tag: 0x%s %s Pos: 0x%s" \
-                #      % (format(tg[0], '02x'), TtbinFileRecordTag(tg[0]), format(ttbinfile.tell(), '02x')))
 
         activity.PostLoad()
         return activity
@@ -73,40 +76,46 @@ class TtbinFileReader:
     def ExtractRecord(self, activity: Activity, tag: int, file: BinaryIO):
         if tag == TtbinFileRecordTag.FileHeader.value:
             return self.ReadHeaderx20(activity, file)
-        elif tag == TtbinFileRecordTag.x48.value:
-            return self.Readx48(activity, file)
-        elif tag == TtbinFileRecordTag.Battery.value:
-            return self.ReadBatteryLevelx49(activity, file)
         elif tag == TtbinFileRecordTag.Status.value:
             return self.ReadStatusx21(activity, file)
-        elif tag == TtbinFileRecordTag.FitnessPoints.value:
-            return self.ReadFitnessPointsx4a(activity, file)
-        elif tag == TtbinFileRecordTag.x4b.value:
-            return self.Readx4b(activity, file)
-        elif tag == TtbinFileRecordTag.Gym.value:
-            return self.ReadGymx41(activity, file)
-        elif tag == TtbinFileRecordTag.Movement.value:
-            return self.ReadMovementx42(activity, file)
-        elif tag == TtbinFileRecordTag.HeartRate.value:
-            return self.ReadHeartRatex25(activity, file)
-        elif tag == TtbinFileRecordTag.Summary.value:
-            return self.ReadSummaryx27(activity, file)
-        elif tag == TtbinFileRecordTag.Treadmill.value:
-            return self.ReadTreadmillx32(activity, file)
-        elif tag == TtbinFileRecordTag.WaitGps.value:
-            return self.ReadWaitGpsx30(activity, file)
         elif tag == TtbinFileRecordTag.Gps.value:
             return self.ReadGpsx22(activity, file)
         elif tag == TtbinFileRecordTag.ExtendedGps.value:
             return self.ReadExtendedGpsx23(activity, file)
+        elif tag == TtbinFileRecordTag.HeartRate.value:
+            return self.ReadHeartRatex25(activity, file)
+        elif tag == TtbinFileRecordTag.Summary.value:
+            return self.ReadSummaryx27(activity, file)
+        elif tag == TtbinFileRecordTag.TrainingSetup.value:
+            return self.ReadTrainingSetupx2d(activity, file)
+        elif tag == TtbinFileRecordTag.Lap.value:
+            return self.ReadLapx2f(activity, file)
+        elif tag == TtbinFileRecordTag.WaitGps.value:
+            return self.ReadWaitGpsx30(activity, file)
+        elif tag == TtbinFileRecordTag.Treadmill.value:
+            return self.ReadTreadmillx32(activity, file)
         elif tag == TtbinFileRecordTag.x37.value:
             return self.Readx37(activity, file)
-        elif tag == TtbinFileRecordTag.Elevation.value:
-            return self.ReadElevationx47(activity, file)
-        elif tag == TtbinFileRecordTag.RouteDescription.value:
-            return self.ReadRouteDescriptionx44(activity, file)
         elif tag == TtbinFileRecordTag.HeartRateRecovery.value:
             return self.ReadHeartRateRecoveryx3f(activity, file)
+        elif tag == TtbinFileRecordTag.Gym.value:
+            return self.ReadGymx41(activity, file)
+        elif tag == TtbinFileRecordTag.Movement.value:
+            return self.ReadMovementx42(activity, file)
+        elif tag == TtbinFileRecordTag.RouteDescription1.value:
+            return self.ReadRouteDescriptionx43(activity, file)
+        elif tag == TtbinFileRecordTag.RouteDescription2.value:
+            return self.ReadRouteDescriptionx44(activity, file)
+        elif tag == TtbinFileRecordTag.Elevation.value:
+            return self.ReadElevationx47(activity, file)
+        elif tag == TtbinFileRecordTag.x48.value:
+            return self.Readx48(activity, file)
+        elif tag == TtbinFileRecordTag.Battery.value:
+            return self.ReadBatteryLevelx49(activity, file)
+        elif tag == TtbinFileRecordTag.FitnessPoints.value:
+            return self.ReadFitnessPointsx4a(activity, file)
+        elif tag == TtbinFileRecordTag.x4b.value:
+            return self.Readx4b(activity, file)
         return False
 
     def ParseDate(self, secondsSince1970: int, includeOffset: int):
@@ -275,6 +284,9 @@ class TtbinFileReader:
             activity.LogElevation(fAltitude, fAscend, fDescend)
         return True
 
+    def ReadRouteDescriptionx43(self, activity: Activity, file: BinaryIO):
+        return self.ReadSomething(file, dataLen=14)
+
     def ReadRouteDescriptionx44(self, activity: Activity, file: BinaryIO):
         return self.ReadSomething(file, dataLen=100)
         
@@ -286,4 +298,22 @@ class TtbinFileReader:
         
         #fScore, fHeartRate = recoveryDef.unpack(data)
         return True
-        
+
+    def ReadTrainingSetupx2d(self, activity: Activity, file: BinaryIO):
+        setupDef = Struct("<sff")
+        data = file.read(setupDef.size)
+        if len(data) != setupDef.size:
+            return False
+
+        fGoal, fMinimum, fMaximum = setupDef.unpack(data)
+        return True
+
+    def ReadLapx2f(self, activity: Activity, file: BinaryIO):
+        lapDef = Struct("<lfh")
+        data = file.read(lapDef.size)
+        if len(data) != lapDef.size:
+            return False
+
+        fSeconds, fDistance, fCalories = lapDef.unpack(data)
+        activity.LogLap(fSeconds, fDistance, fCalories)
+        return True

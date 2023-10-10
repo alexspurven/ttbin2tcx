@@ -1,0 +1,38 @@
+Tag: 0x20 TtbinFileRecordTag.FileHeader Pos: 0x00
+Tag: 0x48 TtbinFileRecordTag.x48 Pos: 0xdf
+Tag: 0x49 TtbinFileRecordTag.Battery Pos: 0xee
+Tag: 0x30 TtbinFileRecordTag.WaitGps Pos: 0xf3
+Tag: 0x21 TtbinFileRecordTag.Status Pos: 0xf6
+Tag: 0x21 TtbinFileRecordTag.Status Pos: 0xfd
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x104
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x10d
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x12a
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x133
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x188
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x191
+Tag: 0x25 TtbinFileRecordTag.HeartRate Pos: 0x1ac
+Tag: 0x22 TtbinFileRecordTag.Gps Pos: 0x1b3
+Tag: 0x23 TtbinFileRecordTag.ExtendedGps Pos: 0x1cf
+Tag: 0x37 TtbinFileRecordTag.x37 Pos: 0x1e7
+Tag: 0x42 TtbinFileRecordTag.Movement Pos: 0x1e9   
+Tag: 0x47 TtbinFileRecordTag.Elevation Pos: 0x1eb
+Tag: 0x25 TtbinFileRecordTag.HeartRate Pos: 0x1f7
+Tag: 0x22 TtbinFileRecordTag.Gps Pos: 0x1fe
+Tag: 0x23 TtbinFileRecordTag.ExtendedGps Pos: 0x21a
+Tag: 0x42 TtbinFileRecordTag.Movement Pos: 0x232
+
+...
+
+Tag: 0x47 TtbinFileRecordTag.Elevation Pos: 0x4b037
+Tag: 0x21 TtbinFileRecordTag.Status Pos: 0x4b043
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x4b04a
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x4b053
+Tag: 0x21 TtbinFileRecordTag.Status Pos: 0x4b075
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x4b07c
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x4b085
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x4b0a7
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x4b0b0
+Tag: 0x4a TtbinFileRecordTag.FitnessPoints Pos: 0x4b10a
+Tag: 0x4b TtbinFileRecordTag.x4b Pos: 0x4b113
+Tag: 0x49 TtbinFileRecordTag.Battery Pos: 0x4b135
+Tag: 0x27 TtbinFileRecordTag.Summary Pos: 0x4b13a 

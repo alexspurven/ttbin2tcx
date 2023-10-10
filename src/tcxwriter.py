@@ -1,7 +1,7 @@
 import datetime
 import os
 from enum import Enum, auto
-from activity import Activity, TrackPoint, ActivityType
+from activity import Activity, TrackPoint, ActivityType, Lap
 from xml.dom.minidom import getDOMImplementation, Element, Document
 
 
@@ -84,9 +84,7 @@ class TcxFileWriter:
             os.remove(fileTcx)
         print("Saving %s" % fileTcx)
 
-        doc, trackElement, activityElement, roolElement = self.CreateXml(activity)
-        self.AddTrackPoints(doc, trackElement, activity)
-        self.AddSummary(doc, roolElement, activityElement, activity)
+        doc = self.CreateXml(activity)
 
         with open(fileTcx, 'wb') as outfile:
             outfile.write(doc.toprettyxml(encoding="utf-8", indent=" "))
@@ -132,40 +130,33 @@ class TcxFileWriter:
         idElement.appendChild(doc.createTextNode(self.FormatDate(activity.startTime)))
         activityElement.appendChild(idElement)
 
+        currentLapIndex: int = 0
+        isDefaultLap: bool = len(activity.laps) == 1
+        for lap in activity.laps:
+            trackElement = self.AddLap(doc, activityElement, lap, isDefaultLap, activity)
+            self.AddTrackPoints(doc, trackElement, currentLapIndex, activity)
+            currentLapIndex = currentLapIndex + 1
+
+        self.AddSummary(doc, roolElement, activityElement, activity)
+
+        return doc
+
+    def AddLap(self, doc: Document, activityElement: Element, lap: Lap, isDefaultLap: bool, activity: Activity):
         lapElement = doc.createElement(XmlElement.Lap.name)
-        lapElement.setAttribute(XmlAttribute.StartTime.name, self.FormatDate(activity.startTime))
+        lapElement.setAttribute(XmlAttribute.StartTime.name, self.FormatDate(lap.startTime))
         activityElement.appendChild(lapElement)
 
         totalTimeElement = doc.createElement(XmlElement.TotalTimeSeconds.name)
-        totalTimeElement.appendChild(doc.createTextNode(str(activity.totalActiveSeconds)))
+        totalTimeElement.appendChild(doc.createTextNode(str(lap.seconds)))
         lapElement.appendChild(totalTimeElement)
 
         distanceElement = doc.createElement(XmlElement.DistanceMeters.name)
-        distanceElement.appendChild(doc.createTextNode(self.FormatFloat(activity.totalDistanceMeters)))
+        distanceElement.appendChild(doc.createTextNode(self.FormatFloat(lap.distance)))
         lapElement.appendChild(distanceElement)
 
-        if activity.maxSpeed > 0:
-            maxSpeedElement = doc.createElement(XmlElement.MaximumSpeed.name)
-            maxSpeedElement.appendChild(doc.createTextNode(self.FormatFloat(activity.maxSpeed)))
-            lapElement.appendChild(maxSpeedElement)
-
         caloriesElement = doc.createElement(XmlElement.Calories.name)
-        caloriesElement.appendChild(doc.createTextNode(str(activity.totalCalories)))
+        caloriesElement.appendChild(doc.createTextNode(str(lap.calories)))
         lapElement.appendChild(caloriesElement)
-
-        avgHeartRateElement = doc.createElement(XmlElement.AverageHeartRateBpm.name)
-        lapElement.appendChild(avgHeartRateElement)
-
-        valueElement = doc.createElement(XmlElement.Value.name)
-        valueElement.appendChild(doc.createTextNode(self.FormatFloat(activity.avgHeartRate)))
-        avgHeartRateElement.appendChild(valueElement)
-
-        maxHeartRateElement = doc.createElement(XmlElement.MaximumHeartRateBpm.name)
-        lapElement.appendChild(maxHeartRateElement)
-
-        valueElement = doc.createElement(XmlElement.Value.name)
-        valueElement.appendChild(doc.createTextNode(str(activity.maxHeartRate)))
-        maxHeartRateElement.appendChild(valueElement)
 
         intensityElement = doc.createElement(XmlElement.Intensity.name)
         intensityElement.appendChild(doc.createTextNode(XmlConstant.Intensity))
@@ -175,14 +166,43 @@ class TcxFileWriter:
         triggerElement.appendChild(doc.createTextNode(XmlConstant.TriggerMethod))
         lapElement.appendChild(triggerElement)
 
+        if isDefaultLap:
+            if activity.maxSpeed > 0:
+                maxSpeedElement = doc.createElement(XmlElement.MaximumSpeed.name)
+                maxSpeedElement.appendChild(doc.createTextNode(self.FormatFloat(activity.maxSpeed)))
+                lapElement.appendChild(maxSpeedElement)
+
+            avgHeartRateElement = doc.createElement(XmlElement.AverageHeartRateBpm.name)
+            lapElement.appendChild(avgHeartRateElement)
+
+            valueElement = doc.createElement(XmlElement.Value.name)
+            valueElement.appendChild(doc.createTextNode(self.FormatFloat(activity.avgHeartRate)))
+            avgHeartRateElement.appendChild(valueElement)
+
+            maxHeartRateElement = doc.createElement(XmlElement.MaximumHeartRateBpm.name)
+            lapElement.appendChild(maxHeartRateElement)
+
+            valueElement = doc.createElement(XmlElement.Value.name)
+            valueElement.appendChild(doc.createTextNode(str(activity.maxHeartRate)))
+            maxHeartRateElement.appendChild(valueElement)
+
         trackElement = doc.createElement(XmlElement.Track.name)
         lapElement.appendChild(trackElement)
 
-        return doc, trackElement, activityElement, roolElement
+        return trackElement
 
-    def AddTrackPoints(self, doc: Document, trackElement: Element, activity: Activity):
+    def SortPointsFunc(self, point: TrackPoint):
+        return point.time
+
+    def AddTrackPoints(self, doc: Document, trackElement: Element, lapIndex: int, activity: Activity):
+        lapTrackPoints = list()
         for time in activity.trackPoints:
             point: TrackPoint = activity.trackPoints[time]
+            if point.lapIndex == lapIndex:
+                lapTrackPoints.append(point)
+        lapTrackPoints.sort(key=self.SortPointsFunc)
+
+        for point in lapTrackPoints:
             pointElement = doc.createElement(XmlElement.Trackpoint.name)
             trackElement.appendChild(pointElement)
 
@@ -300,4 +320,3 @@ class TcxFileWriter:
         landElement = doc.createElement(XmlElement.LangID.name)
         landElement.appendChild(doc.createTextNode(XmlConstant.LangID))
         authorElement.appendChild(landElement)
-
