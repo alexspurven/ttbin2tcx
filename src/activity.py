@@ -191,7 +191,7 @@ class Activity(object):
                     point: TrackPoint = self.trackPoints[time]
                     point.distanceMeters = point.distanceMeters * factor
 
-        prevPoint: TrackPoint = None
+        prevPoint = None
         for time in sorted(self.trackPoints):
             point: TrackPoint = self.trackPoints[time]
             if self.activityType == ActivityType.Treadmill:

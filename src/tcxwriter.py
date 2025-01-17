@@ -1,79 +1,8 @@
-import datetime
 import os
-from enum import Enum, auto
-from activity import Activity, TrackPoint, ActivityType, Lap
+from activity import Activity, TrackPoint, Lap
 from xml.dom.minidom import getDOMImplementation, Element, Document
+from tcxdef import XmlElement, XmlAttribute, XmlConstant, XmlNamespace, XmlTools
 
-
-class XmlNamespace(Enum):
-    x = auto()
-    xmlns = auto()
-    xsi = auto()
-
-
-class XmlElement(Enum):
-    ActiveSeconds = auto()
-    Activities = auto()
-    Activity = auto()
-    AltitudeMeters = auto()
-    Author = auto()
-    AverageHeartRateBpm = auto()
-    AvgSpeed = auto()
-    Cadence = auto()
-    Calories = auto()
-    ClimbMeters = auto()
-    Creator = auto()
-    DistanceMeters = auto()
-    ElapsedSeconds = auto()
-    Extensions = auto()
-    HeartRateBpm = auto()
-    Id = auto()
-    Intensity = auto()
-    KiloCalories = auto()
-    LangID = auto()
-    LatitudeDegrees = auto()
-    LongitudeDegrees = auto()
-    LX = auto()
-    Lap = auto()
-    MaximumHeartRateBpm = auto()
-    MaximumSpeed = auto()
-    Name = auto()
-    Position = auto()
-    RunCadence = auto()
-    Speed = auto()
-    StepCount = auto()
-    Time = auto()
-    TotalTimeSeconds = auto()
-    TPX = auto()
-    Track = auto()
-    Trackpoint = auto()
-    TrainingCenterDatabase = auto()
-    TriggerMethod = auto()
-    Value = auto()
-
-
-class XmlAttribute(Enum):
-    Sport = auto()
-    StartTime = auto()
-    schemaLocation = auto()
-    type = auto()
-    x = auto()
-    xmlns = auto()
-    xsi = auto()
-
-
-class XmlConstant:
-    DeviceName: str = "TomTom Adventurer"
-    Intensity: str = "Active"
-    LangID: str = "en"
-    TriggerMethod: str = "Manual"
-    xmlns: str = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
-    xmlns_x: str = "http://www.garmin.com/xmlschemas/ActivityExtension/v2"
-    xmlns_xsi: str = "http://www.w3.org/2001/XMLSchema-instance"
-    xsi_schemaLocation: str = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd"
-    xsi_device_type: str = "Device_t"
-    xsi_extensions_type: str = "Extensions_t"
-    xsi_app_type: str = "Application_t"
 
 class TcxFileWriter:
     def __init__(self):
@@ -90,44 +19,26 @@ class TcxFileWriter:
             outfile.write(doc.toprettyxml(encoding="utf-8", indent=" "))
             outfile.flush()
 
-    def AddNamespace(self, namespace: str, attribute: str):
-        ret = format("%s:%s" % (namespace, attribute))
-        return ret
-
-    def FormatDate(self, dt: datetime):
-        return  dt.isoformat("T", "seconds").replace("+00:00", "Z")
-
-    def FormatFloat(self, f: float):
-        return '%.2f' % f
-
-    def FormatSport(self, activityType: ActivityType):
-        if activityType == ActivityType.Running or activityType == ActivityType.Treadmill:
-            return "Running"
-        elif activityType == ActivityType.Cycling or activityType == ActivityType.IndoorCycling:
-            return "Biking"
-        else:
-            return "Other"
-
     def CreateXml(self, activity: Activity):
         impl = getDOMImplementation()
         doc = impl.createDocument(namespaceURI=None, qualifiedName=XmlElement.TrainingCenterDatabase.name, doctype=None)
         roolElement = doc.documentElement
         roolElement.setAttribute(XmlAttribute.xmlns.name, XmlConstant.xmlns)
-        roolElement.setAttribute(self.AddNamespace(XmlNamespace.xmlns.name, XmlAttribute.xsi.name),
+        roolElement.setAttribute(XmlTools.AddNamespace(XmlNamespace.xmlns.name, XmlAttribute.xsi.name),
                                  XmlConstant.xmlns_xsi)
-        roolElement.setAttribute(self.AddNamespace(XmlNamespace.xmlns.name, XmlAttribute.x.name), XmlConstant.xmlns_x)
-        roolElement.setAttribute(self.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.schemaLocation.name),
+        roolElement.setAttribute(XmlTools.AddNamespace(XmlNamespace.xmlns.name, XmlAttribute.x.name), XmlConstant.xmlns_x)
+        roolElement.setAttribute(XmlTools.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.schemaLocation.name),
                                  XmlConstant.xsi_schemaLocation)
 
         activitiesElement = doc.createElement(XmlElement.Activities.name)
         roolElement.appendChild(activitiesElement)
 
         activityElement = doc.createElement(XmlElement.Activity.name)
-        activityElement.setAttribute(XmlAttribute.Sport.name, self.FormatSport(activity.activityType))
+        activityElement.setAttribute(XmlAttribute.Sport.name, XmlTools.FormatSport(activity.activityType))
         activitiesElement.appendChild(activityElement)
 
         idElement = doc.createElement(XmlElement.Id.name)
-        idElement.appendChild(doc.createTextNode(self.FormatDate(activity.startTime)))
+        idElement.appendChild(doc.createTextNode(XmlTools.FormatDate(activity.startTime)))
         activityElement.appendChild(idElement)
 
         currentLapIndex: int = 0
@@ -143,7 +54,7 @@ class TcxFileWriter:
 
     def AddLap(self, doc: Document, activityElement: Element, lap: Lap, isDefaultLap: bool, activity: Activity):
         lapElement = doc.createElement(XmlElement.Lap.name)
-        lapElement.setAttribute(XmlAttribute.StartTime.name, self.FormatDate(lap.startTime))
+        lapElement.setAttribute(XmlAttribute.StartTime.name, XmlTools.FormatDate(lap.startTime))
         activityElement.appendChild(lapElement)
 
         totalTimeElement = doc.createElement(XmlElement.TotalTimeSeconds.name)
@@ -151,7 +62,7 @@ class TcxFileWriter:
         lapElement.appendChild(totalTimeElement)
 
         distanceElement = doc.createElement(XmlElement.DistanceMeters.name)
-        distanceElement.appendChild(doc.createTextNode(self.FormatFloat(lap.distance)))
+        distanceElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(lap.distance)))
         lapElement.appendChild(distanceElement)
 
         caloriesElement = doc.createElement(XmlElement.Calories.name)
@@ -169,14 +80,14 @@ class TcxFileWriter:
         if isDefaultLap:
             if activity.maxSpeed > 0:
                 maxSpeedElement = doc.createElement(XmlElement.MaximumSpeed.name)
-                maxSpeedElement.appendChild(doc.createTextNode(self.FormatFloat(activity.maxSpeed)))
+                maxSpeedElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(activity.maxSpeed)))
                 lapElement.appendChild(maxSpeedElement)
 
             avgHeartRateElement = doc.createElement(XmlElement.AverageHeartRateBpm.name)
             lapElement.appendChild(avgHeartRateElement)
 
             valueElement = doc.createElement(XmlElement.Value.name)
-            valueElement.appendChild(doc.createTextNode(self.FormatFloat(activity.avgHeartRate)))
+            valueElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(activity.avgHeartRate)))
             avgHeartRateElement.appendChild(valueElement)
 
             maxHeartRateElement = doc.createElement(XmlElement.MaximumHeartRateBpm.name)
@@ -207,7 +118,7 @@ class TcxFileWriter:
             trackElement.appendChild(pointElement)
 
             timeElement = doc.createElement(XmlElement.Time.name)
-            timeElement.appendChild(doc.createTextNode(self.FormatDate(point.time)))
+            timeElement.appendChild(doc.createTextNode(XmlTools.FormatDate(point.time)))
             pointElement.appendChild(timeElement)
 
             if point.longitudeDegrees != 0 or point.latitudeDegrees != 0:
@@ -224,11 +135,11 @@ class TcxFileWriter:
 
             if point.altitudeMeters != 0:
                 altitudeElement = doc.createElement(XmlElement.AltitudeMeters.name)
-                altitudeElement.appendChild(doc.createTextNode(self.FormatFloat(point.altitudeMeters)))
+                altitudeElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(point.altitudeMeters)))
                 pointElement.appendChild(altitudeElement)
 
             distanceElement = doc.createElement(XmlElement.DistanceMeters.name)
-            distanceElement.appendChild(doc.createTextNode(self.FormatFloat(point.distanceMeters)))
+            distanceElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(point.distanceMeters)))
             pointElement.appendChild(distanceElement)
 
             if point.heartRate > 0:
@@ -243,16 +154,16 @@ class TcxFileWriter:
                 extensionsElement = doc.createElement(XmlElement.Extensions.name)
                 pointElement.appendChild(extensionsElement)
 
-                tpxElement = doc.createElement(self.AddNamespace(XmlNamespace.x.name, XmlElement.TPX.name))
+                tpxElement = doc.createElement(XmlTools.AddNamespace(XmlNamespace.x.name, XmlElement.TPX.name))
                 extensionsElement.appendChild(tpxElement)
 
                 if point.speed > 0:
-                    speedElement = doc.createElement(self.AddNamespace(XmlNamespace.x.name, XmlElement.Speed.name))
-                    speedElement.appendChild(doc.createTextNode(self.FormatFloat(point.speed)))
+                    speedElement = doc.createElement(XmlTools.AddNamespace(XmlNamespace.x.name, XmlElement.Speed.name))
+                    speedElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(point.speed)))
                     tpxElement.appendChild(speedElement)
 
                 if point.cadence > 0:
-                    cadenceElement = doc.createElement(self.AddNamespace(XmlNamespace.x.name, XmlElement.RunCadence.name))
+                    cadenceElement = doc.createElement(XmlTools.AddNamespace(XmlNamespace.x.name, XmlElement.RunCadence.name))
                     cadenceElement.appendChild(doc.createTextNode(str(point.cadence)))
                     tpxElement.appendChild(cadenceElement)
 
@@ -263,7 +174,7 @@ class TcxFileWriter:
 
     def AddSummary(self, doc: Document, roolElement: Element, activityElement: Element, activity: Activity):
         creatorElement = doc.createElement(XmlElement.Creator.name)
-        creatorElement.setAttribute(self.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.type.name),
+        creatorElement.setAttribute(XmlTools.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.type.name),
                       XmlConstant.xsi_device_type)
         activityElement.appendChild(creatorElement)
 
@@ -272,11 +183,11 @@ class TcxFileWriter:
         creatorElement.appendChild(nameElement)
 
         extensionsElement = doc.createElement(XmlElement.Extensions.name)
-        extensionsElement.setAttribute(self.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.type.name),
+        extensionsElement.setAttribute(XmlTools.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.type.name),
                       XmlConstant.xsi_extensions_type)
         activityElement.appendChild(extensionsElement)
 
-        xElement = doc.createElement(self.AddNamespace(XmlNamespace.x.name, XmlElement.LX.name))
+        xElement = doc.createElement(XmlTools.AddNamespace(XmlNamespace.x.name, XmlElement.LX.name))
         extensionsElement.appendChild(xElement)
 
         activeSecondsElement = doc.createElement(XmlElement.ActiveSeconds.name)
@@ -288,11 +199,11 @@ class TcxFileWriter:
         xElement.appendChild(elapsedSecondsElement)
 
         distanceElement = doc.createElement(XmlElement.DistanceMeters.name)
-        distanceElement.appendChild(doc.createTextNode(self.FormatFloat(activity.totalDistanceMeters)))
+        distanceElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(activity.totalDistanceMeters)))
         xElement.appendChild(distanceElement)
 
         avgSpeedElement = doc.createElement(XmlElement.AvgSpeed.name)
-        avgSpeedElement.appendChild(doc.createTextNode(self.FormatFloat(activity.avgSpeed)))
+        avgSpeedElement.appendChild(doc.createTextNode(XmlTools.FormatFloat(activity.avgSpeed)))
         xElement.appendChild(avgSpeedElement)
 
         caloriesElement = doc.createElement(XmlElement.KiloCalories.name)
@@ -309,7 +220,7 @@ class TcxFileWriter:
             xElement.appendChild(climbElement)
 
         authorElement = doc.createElement(XmlElement.Author.name)
-        authorElement.setAttribute(self.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.type.name),
+        authorElement.setAttribute(XmlTools.AddNamespace(XmlNamespace.xsi.name, XmlAttribute.type.name),
                                        XmlConstant.xsi_app_type)
         roolElement.appendChild(authorElement)
 
