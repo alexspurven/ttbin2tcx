@@ -23,8 +23,8 @@ def process(fileTcx: str, newLen: float):
 
     editor = TcxFileEditor()
     editor.LoadXml(fileTcx)
-    editor.ChangeLength(newLen)
-    editor.SaveXml(fileTcxOut)
+    if editor.ChangeLength(newLen):
+        editor.SaveXml(fileTcxOut)
 
 
 if __name__ == "__main__":

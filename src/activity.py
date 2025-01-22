@@ -35,7 +35,7 @@ class TrackPoint:
         self.lapIndex = lapIndex
         self.heartRate = 0
         self.distanceMeters = 0
-        self.speed = 0
+        self.speed = 0 # m/s
         self.latitudeDegrees = 0
         self.longitudeDegrees = 0
         self.altitudeMeters = 0

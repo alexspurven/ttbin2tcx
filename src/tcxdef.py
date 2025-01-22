@@ -82,6 +82,9 @@ class XmlTools:
     def FormatDate(dt: datetime):
         return  dt.isoformat("T", "seconds").replace("+00:00", "Z")
 
+    def ISOStrToDate(s: str):
+        return datetime.datetime.fromisoformat(s)
+
     def FormatFloat(f: float):
         return '%.2f' % f
 
