@@ -1,6 +1,6 @@
 import os
 import sys
-from tcxeditor import TcxFileEditor
+from classes.tcxeditor import TcxFileEditor
 
 
 def main():

@@ -1,6 +1,6 @@
 import datetime
 from enum import Enum, auto
-from activity import ActivityType
+from .activity import ActivityType
 
 
 class XmlNamespace(Enum):

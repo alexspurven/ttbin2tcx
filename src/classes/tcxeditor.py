@@ -4,7 +4,7 @@ import datetime
 import xml.dom.minidom
 from enum import Enum, auto
 from xml.dom.minidom import Element
-from tcxdef import XmlTools, XmlElement, XmlAttribute, XmlNamespace
+from .tcxdef import XmlTools, XmlElement, XmlAttribute, XmlNamespace
 
 
 class IntervalDef(Enum):
@@ -50,7 +50,7 @@ class TrackPointWrapper:
         return
 
     def SetDistance(self, distance: float):
-        self.distanceMeters = round(distance, 2)
+        self.distanceMeters = round(distance, 4)
         self.CorrectDistance(1.0)
         return
 
@@ -312,12 +312,16 @@ class TcxFileEditor:
         currentDistance = 0.0
         currentTime = startTime
         currentSpeed = 0.0
+        smoothFirstPoints = smoothRest = 5
         for trackPointTime in trackPointsTime:
             trackPoint = trackPointsByTime[trackPointTime]
             interval = self.GetIntervalForTime(intervalList, trackPointTime)
             if interval is not None:
                 currentSpeed = interval.speed
             timeFromPrev = (trackPointTime - currentTime).total_seconds()
+            if smoothRest > 0: # smooth start
+                currentSpeed = currentSpeed * (1 - smoothRest / smoothFirstPoints)
+                smoothRest = smoothRest - 1
             currentDistance = currentDistance + timeFromPrev * currentSpeed / 3.6
             currentTime = trackPointTime
             trackPoint.SetDistance(currentDistance)
@@ -326,7 +330,7 @@ class TcxFileEditor:
         newLen = self.GetFullDistance(trackPoints)
 
         print("Original distance: %s m" % oldLen)
-        print("Changed distance: %s m. Changing back" % newLen)
+        print("Calculated distance: %s m. Changing back" % newLen)
 
         factor: float = oldLen / newLen
         for trackPoint in trackPoints:

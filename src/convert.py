@@ -1,8 +1,8 @@
 import os
 import sys
 import datetime
-from tcxwriter import TcxFileWriter
-from ttbinreader import TtbinFileReader
+from classes.tcxwriter import TcxFileWriter
+from classes.ttbinreader import TtbinFileReader
 
 
 def main():
