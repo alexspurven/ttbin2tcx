@@ -82,5 +82,7 @@ Speed specification for intervals:
 Examples:
 
 ***5000m10***
+
 ***1000m10;300s12;1000m10;300s12;1000m10***
+
 ***300s10.5;100s12;300s10.5;100s12;300s10.5***
