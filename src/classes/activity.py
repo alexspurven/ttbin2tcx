@@ -76,6 +76,7 @@ class Activity(object):
     maxSpeed: float
     batteryLevelMin: int
     batteryLevelMax: int
+    batteryLevels: list
     avgHeartRate: int
     maxHeartRate: int
     currentLapIndex: int
@@ -100,6 +101,7 @@ class Activity(object):
         self.maxSpeed = 0
         self.batteryLevelMin = 0
         self.batteryLevelMax = 0
+        self.batteryLevels = list()
         self.trackPoints = dict()
         self.trackPointsWaitingAltitude = list()
         self.avgHeartRate = 0
@@ -108,6 +110,7 @@ class Activity(object):
         self.currentLapIndex = 0
 
     def LogBatteryLevel(self, level: int):
+        self.batteryLevels.append(level)
         if self.batteryLevelMin == 0:
             self.batteryLevelMin = level
         if self.batteryLevelMax == 0:
@@ -245,12 +248,33 @@ class Activity(object):
             if lap.startTime > point.time:
                 lap.startTime = point.time
 
+        # linear trend for battery levels
+        if len(self.batteryLevels) > 0:
+            avgX = (len(self.batteryLevels) + 1) / 2
+            avgY = sum(self.batteryLevels) / len(self.batteryLevels)
+            sumXDif = 0
+            sumYDif = 0
+            sumXdifYdif = 0
+            sumXdifXdif = 0
+            for idx, lvl in enumerate(self.batteryLevels):
+                sumXDif = sumXDif + (idx - avgX)
+                sumYDif = sumYDif + (lvl - avgY)
+                sumXdifYdif = sumXdifYdif + (idx - avgX) * (lvl - avgY)
+                sumXdifXdif = sumXdifXdif + (idx - avgX) * (idx - avgX)
+            if sumXdifXdif != 0:
+                a = sumXdifYdif / sumXdifXdif
+                b = avgY - a * avgX
+                self.batteryLevelMax = a * 1 + b
+                self.batteryLevelMin = (len(self.batteryLevels) + 1) * a + b
+
         print("   Distance: %s m" % (round(self.totalDistanceMeters)))
         print("   Max heart rate: %s" % (round(self.maxHeartRate)))
         print("   Avg heart rate: %s" % (round(self.avgHeartRate)))
         print("   Max pace: %s min/km" % (self.FormatPaceMinPerKm(self.maxSpeed)))
         print("   Avg pace: %s min/km" % (self.FormatPaceMinPerKm(self.avgSpeed)))
-        print("   Battery level: %s%% -> %s%%" % (self.batteryLevelMax, self.batteryLevelMin))
+        print("   Battery level: %s%% -> %s%%" % (round(self.batteryLevelMax), round(self.batteryLevelMin)))
+        print("   Steps: %s" % (round(self.totalSteps)))
+        print("   Calories: %s" % (round(self.totalCalories)))
 
     def FormatPaceMinPerKm(self, speedMPerMin: float):
         if speedMPerMin == 0:
@@ -263,9 +287,9 @@ class Activity(object):
     def LogLap(self, seconds: int, distance: float, calories: int):
         # there are accumulated values are passed here
         # calculating values just for this lap
-        sumSeconds: int = 0;
-        sumDistance = 0;
-        sumCalories = 0;
+        sumSeconds: int = 0
+        sumDistance = 0
+        sumCalories = 0
         for lap in self.laps:
             sumSeconds = sumSeconds + lap.seconds
             sumDistance = sumDistance + lap.distance
