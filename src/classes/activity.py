@@ -3,6 +3,11 @@ import datetime
 from enum import Enum
 
 
+class ArgConstant:
+    MaxHR: str = "-maxhr"
+    TrHR: str = "-trhr"
+
+
 class ActivityType(Enum):
     Running = 0x00
     Cycling = 0x01
@@ -79,12 +84,11 @@ class Activity(object):
     batteryLevels: list
     avgHeartRate: int
     maxHeartRate: int
+    heartRatesByZone: dict # key = maxHR in zone, value = number of points
     currentLapIndex: int
-
     trackPoints: dict # key = time, value = TrackPoint
     trackPointsWaitingAltitude: list # track points waiting altitude measurement
     laps: list
-
     defaultYear: int = 1970 # sometimes get 1969 year from TTBin
 
     def __init__(self):
@@ -106,6 +110,7 @@ class Activity(object):
         self.trackPointsWaitingAltitude = list()
         self.avgHeartRate = 0
         self.maxHeartRate = 0
+        self.heartRatesByZone = dict()
         self.laps = list()
         self.currentLapIndex = 0
 
@@ -141,6 +146,7 @@ class Activity(object):
         point = self.GetTrackPointAt(time)
         if point is not None:
             point.heartRate = heartRate
+        self.AddToHRZones(heartRate)
 
     def LogSteps(self, time: datetime, totalSteps: int, distance: float):
         point = self.GetTrackPointAt(time)
@@ -268,13 +274,36 @@ class Activity(object):
                 self.batteryLevelMin = (len(self.batteryLevels) + 1) * a + b
 
         print("   Distance: %s m" % (round(self.totalDistanceMeters)))
-        print("   Max heart rate: %s" % (round(self.maxHeartRate)))
-        print("   Avg heart rate: %s" % (round(self.avgHeartRate)))
         print("   Max pace: %s min/km" % (self.FormatPaceMinPerKm(self.maxSpeed)))
         print("   Avg pace: %s min/km" % (self.FormatPaceMinPerKm(self.avgSpeed)))
+
+        # heart rate zones info
+        print("   Max heart rate: %s" % (round(self.maxHeartRate)))
+        print("   Avg heart rate: %s" % (round(self.avgHeartRate)))
+        totalHRpoints: int = 0
+        for maxZoneHeartRate in self.heartRatesByZone:
+            totalHRpoints = totalHRpoints + self.heartRatesByZone[maxZoneHeartRate]
+        if totalHRpoints > 0:
+            for idx, maxZoneHeartRate in enumerate(self.heartRatesByZone):
+                zone: int = idx + 1
+                percent: int =  round(self.heartRatesByZone[maxZoneHeartRate] / totalHRpoints * 100)
+                bar: str = "".join([char * round(percent / 3) for char in "#"])
+                heartRateRange: str
+                if idx == 0:
+                    heartRateRange = "...-%s" % maxZoneHeartRate
+                elif idx == len(self.heartRatesByZone) - 1:
+                    heartRateRange = "%s-..." % (list(self.heartRatesByZone)[idx - 1] + 1)
+                else:
+                    heartRateRange = "%s-%s" % (list(self.heartRatesByZone)[idx - 1] + 1, maxZoneHeartRate)
+                if len(bar) > 0:
+                    print("   Zone %s (%s): %s %s%%" % (zone, heartRateRange, bar, percent))
+                else:
+                    print("   Zone %s (%s): %s%%" % (zone, heartRateRange, percent))
+
         print("   Battery level: %s%% -> %s%%" % (round(self.batteryLevelMax), round(self.batteryLevelMin)))
         print("   Steps: %s" % (round(self.totalSteps)))
         print("   Calories: %s" % (round(self.totalCalories)))
+        return
 
     def FormatPaceMinPerKm(self, speedMPerMin: float):
         if speedMPerMin == 0:
@@ -297,4 +326,53 @@ class Activity(object):
         lap = Lap(seconds - sumSeconds, distance - sumDistance, calories - sumCalories)
         self.laps.append(lap)
         self.currentLapIndex = self.currentLapIndex + 1
+        return
+
+    def BuildHRZones(self, args: list[str]):
+        self.heartRatesByZone.clear()
+        for idx, arg in enumerate(args):
+            if arg == ArgConstant.MaxHR and len(args) > idx + 1:
+                self.BuildClassicHRZones(int(args[idx + 1]))
+                return
+            if arg == ArgConstant.TrHR and len(args) > idx + 1:
+                self.BuildLTHRHRZones(int(args[idx + 1]))
+                return
+
+    # https://trainingtilt.com/how-to-calculate-heart-rate-zones
+    def BuildClassicHRZones(self, maxHR: int):
+        self.heartRatesByZone[round(maxHR * 0.6)] = 0
+        self.heartRatesByZone[round(maxHR * 0.7)] = 0
+        self.heartRatesByZone[round(maxHR * 0.8)] = 0
+        self.heartRatesByZone[round(maxHR * 0.9)] = 0
+        self.heartRatesByZone[999] = 0
+        return
+
+    def BuildClassicHRZonesFromThreshold(self, thresholdHR: int):
+        maxHR = round(thresholdHR / 0.9)
+        self.BuildClassicHRZones(maxHR)
+        return
+
+    # https://trainingtilt.com/how-to-calculate-heart-rate-zones
+    def BuildLTHRHRZones(self, thresholdHR: int):
+        self.heartRatesByZone[round(thresholdHR * 0.8)] = 0
+        self.heartRatesByZone[round(thresholdHR * 0.89)] = 0
+        self.heartRatesByZone[round(thresholdHR * 0.93)] = 0
+        self.heartRatesByZone[round(thresholdHR * 0.99)] = 0
+        self.heartRatesByZone[999] = 0
+        return
+
+    # https://joefrieltraining.com/a-quick-guide-to-setting-zone/
+    def BuildJoeFrielHRZones(self, thresholdHR: int):
+        self.heartRatesByZone[round(thresholdHR * 0.85)] = 0
+        self.heartRatesByZone[round(thresholdHR * 0.89)] = 0
+        self.heartRatesByZone[round(thresholdHR * 0.94)] = 0
+        self.heartRatesByZone[round(thresholdHR * 0.99)] = 0
+        self.heartRatesByZone[999] = 0
+        return
+
+    def AddToHRZones(self, heartRate: int):
+        for maxZoneHeartRate in self.heartRatesByZone:
+            if maxZoneHeartRate >= heartRate:
+                self.heartRatesByZone[maxZoneHeartRate] = self.heartRatesByZone[maxZoneHeartRate] + 1
+                return
         return

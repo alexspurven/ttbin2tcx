@@ -7,7 +7,7 @@ from classes.ttbinreader import TtbinFileReader
 
 def main():
     argcnt = len(sys.argv)
-    if argcnt != 2:
+    if argcnt < 2:
         print("Wrong arguments")
         exit()
 
@@ -16,7 +16,7 @@ def main():
     if os.path.isfile(fileOrDir):
         f_name, f_ext = os.path.splitext(fileOrDir)
         if f_ext.lower() == ".ttbin":
-            process(fileOrDir)
+            process(fileOrDir, sys.argv)
         else:
             print("Skipped %s" % fileOrDir)
 
@@ -26,13 +26,13 @@ def main():
             f_name, f_ext = os.path.splitext(f)
             if f_ext.lower() == ".ttbin":
                 fileTtbin = os.path.join(fileOrDir, f)
-                process(fileTtbin)
+                process(fileTtbin, sys.argv)
     return 0
 
 
-def process(fileTtbin: str):
+def process(fileTtbin: str, args: list[str]):
     reader = TtbinFileReader()
-    activity = reader.LoadActivity(fileTtbin)
+    activity = reader.LoadActivity(fileTtbin, args)
 
     #f_name, f_ext = os.path.splitext(fileTtbin)
     #fileTcx = f_name + ".tcx"

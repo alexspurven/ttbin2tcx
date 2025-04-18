@@ -48,9 +48,10 @@ class TtbinFileReader:
     def __init__(self):
         self.localTimeOffset = 0
 
-    def LoadActivity(self, fileTtbin: str):
+    def LoadActivity(self, fileTtbin: str, args: list[str]):
         print("Loading %s" % fileTtbin)
         activity = Activity()
+        activity.BuildHRZones(args)
 
         with open(fileTtbin, "rb") as ttbinfile:
             while True:
