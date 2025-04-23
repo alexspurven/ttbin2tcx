@@ -256,6 +256,13 @@ class Activity(object):
 
         # linear trend for battery levels
         if len(self.batteryLevels) > 0:
+            # filtering out outliers
+            mean = sum(self.batteryLevels) / len(self.batteryLevels)
+            squared_diffs = [(x - mean) ** 2 for x in self.batteryLevels]
+            variance = sum(squared_diffs) / len(self.batteryLevels)
+            std_dev = variance ** 0.5
+            self.batteryLevels = [x for x in self.batteryLevels if abs(x - mean) <= 2 * std_dev]
+            # trend for rest
             avgX = (len(self.batteryLevels) + 1) / 2
             avgY = sum(self.batteryLevels) / len(self.batteryLevels)
             sumXDif = 0
@@ -270,7 +277,7 @@ class Activity(object):
             if sumXdifXdif != 0:
                 a = sumXdifYdif / sumXdifXdif
                 b = avgY - a * avgX
-                self.batteryLevelMax = a * 1 + b
+                #self.batteryLevelMax = a * 1 + b
                 self.batteryLevelMin = (len(self.batteryLevels) + 1) * a + b
 
         print("   Distance: %s m" % (round(self.totalDistanceMeters)))
