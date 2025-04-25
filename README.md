@@ -86,3 +86,17 @@ Examples:
 ***1000m10;300s12;1000m10;300s12;1000m10***
 
 ***300s10.5;100s12;300s10.5;100s12;300s10.5***
+
+## Showing percent per heart rate zone
+
+This will print time in each heart rate zone after a TTBIN file processed.
+
+Using:
+
+***(path to python)python.exe (path to src)convert.py (path to ttbin file or to a folder with ttbin files) -hrzones (hr zones specification)***
+
+Heart rate zone specification is a semicolon separated list of max values for the each zone.
+
+Example:
+
+***"c:\Program Files\Python311\python.exe" "C:/Users/User/GitHub/ttbin2tcx/src/convert.py" "c:\Users\User\OneDrive\tomtom all\ttbin2tcx\test3" -hrzones 120;140;160;180***

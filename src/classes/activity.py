@@ -4,8 +4,7 @@ from enum import Enum
 
 
 class ArgConstant:
-    MaxHR: str = "-maxhr"
-    TrHR: str = "-trhr"
+    HRZones: str = "-hrzones" # like 130;140;150;160;170;180;
 
 
 class ActivityType(Enum):
@@ -338,42 +337,20 @@ class Activity(object):
     def BuildHRZones(self, args: list[str]):
         self.heartRatesByZone.clear()
         for idx, arg in enumerate(args):
-            if arg == ArgConstant.MaxHR and len(args) > idx + 1:
-                self.BuildClassicHRZones(int(args[idx + 1]))
+            if arg == ArgConstant.HRZones and len(args) > idx + 1:
+                self.ParseHRZones(args[idx + 1])
                 return
-            if arg == ArgConstant.TrHR and len(args) > idx + 1:
-                self.BuildLTHRHRZones(int(args[idx + 1]))
-                return
-
-    # https://trainingtilt.com/how-to-calculate-heart-rate-zones
-    def BuildClassicHRZones(self, maxHR: int):
-        self.heartRatesByZone[round(maxHR * 0.6)] = 0
-        self.heartRatesByZone[round(maxHR * 0.7)] = 0
-        self.heartRatesByZone[round(maxHR * 0.8)] = 0
-        self.heartRatesByZone[round(maxHR * 0.9)] = 0
-        self.heartRatesByZone[999] = 0
         return
 
-    def BuildClassicHRZonesFromThreshold(self, thresholdHR: int):
-        maxHR = round(thresholdHR / 0.9)
-        self.BuildClassicHRZones(maxHR)
-        return
+    def ParseHRZones(self, zones: str):
+        if len(zones) == 0:
+            print("Wrong heart rate zones parameter %s" % zones)
+            return
 
-    # https://trainingtilt.com/how-to-calculate-heart-rate-zones
-    def BuildLTHRHRZones(self, thresholdHR: int):
-        self.heartRatesByZone[round(thresholdHR * 0.8)] = 0
-        self.heartRatesByZone[round(thresholdHR * 0.89)] = 0
-        self.heartRatesByZone[round(thresholdHR * 0.93)] = 0
-        self.heartRatesByZone[round(thresholdHR * 0.99)] = 0
-        self.heartRatesByZone[999] = 0
-        return
-
-    # https://joefrieltraining.com/a-quick-guide-to-setting-zone/
-    def BuildJoeFrielHRZones(self, thresholdHR: int):
-        self.heartRatesByZone[round(thresholdHR * 0.85)] = 0
-        self.heartRatesByZone[round(thresholdHR * 0.89)] = 0
-        self.heartRatesByZone[round(thresholdHR * 0.94)] = 0
-        self.heartRatesByZone[round(thresholdHR * 0.99)] = 0
+        zoneList = zones.split(";")
+        for zoneStr in zoneList:
+            zoneMax = int(zoneStr)
+            self.heartRatesByZone[zoneMax] = 0
         self.heartRatesByZone[999] = 0
         return
 
