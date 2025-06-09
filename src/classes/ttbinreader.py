@@ -20,7 +20,7 @@ class TtbinFileRecordTag(Enum):
     # CyclingCadence = 0x31
     Treadmill = 0x32
     # Swim = 0x34
-    # GoalProgress = 0x35
+    GoalProgress = 0x35
     x37 = 0x37
     # IntervalSetup = 0x39
     # IntervalStart = 0x3a
@@ -95,6 +95,8 @@ class TtbinFileReader:
             return self.ReadWaitGpsx30(activity, file)
         elif tag == TtbinFileRecordTag.Treadmill.value:
             return self.ReadTreadmillx32(activity, file)
+        elif tag == TtbinFileRecordTag.GoalProgress.value:
+            return self.ReadGoalProgressx35(activity, file)
         elif tag == TtbinFileRecordTag.x37.value:
             return self.Readx37(activity, file)
         elif tag == TtbinFileRecordTag.HeartRateRecovery.value:
@@ -245,6 +247,9 @@ class TtbinFileReader:
         time = self.ParseDate(fTime, includeOffset=True)
         activity.LogSteps(time, fSteps, fDistance)
         return True
+
+    def ReadGoalProgressx35(self, activity: Activity, file: BinaryIO):
+        return self.ReadSomething(file, dataLen=5)
 
     def ReadWaitGpsx30(self, activity: Activity, file: BinaryIO):
         waitGpsDef = Struct("<h")
